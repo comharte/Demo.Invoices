@@ -14,6 +14,8 @@ builder.Services.AddInfrastructure()
     .AddApplication()
     .AddHosting();
 
+builder.Services.AddSwaggerGen();
+
 var env = builder.Configuration.GetValue<string>("env");
 var isc = builder.Configuration.GetSection("InvoiceServiceConfiguration").Get<InvoiceServiceConfiguration>();
 
@@ -24,7 +26,11 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
+    ///openapi/v1.json
     app.MapOpenApi();
+
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
 app.UseMiddleware<ExceptionMiddleware>();
