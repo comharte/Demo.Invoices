@@ -1,12 +1,16 @@
-Demo.Invoices.API.SampleCode.SampleCodeExecution.Run();
+global using Demo.Invoices.API;
+global using Demo.Invoices.API.Application;
+global using Demo.Invoices.API.Infrastructure.Repository;
+global using Demo.Invoices.API.Infrastructure.API;
+
+//Demo.Invoices.API.SampleCode.SampleCodeExecution.Run();
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
-builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+//Using extension method to allow each layer register its own dependencies
+builder.Services.AddInfrastructure()
+    .AddApplication()
+    .AddHosting();
 
 var app = builder.Build();
 
