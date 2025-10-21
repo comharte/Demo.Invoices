@@ -1,5 +1,7 @@
+global using System.Text.Json;
 global using Demo.Invoices.API;
 global using Demo.Invoices.API.Application;
+global using Demo.Invoices.API.Hosting.Middleware;
 global using Demo.Invoices.API.Infrastructure.Repository;
 global using Demo.Invoices.API.Infrastructure.API;
 
@@ -12,12 +14,24 @@ builder.Services.AddInfrastructure()
     .AddApplication()
     .AddHosting();
 
+var env = builder.Configuration.GetValue<string>("env");
+var isc = builder.Configuration.GetSection("InvoiceServiceConfiguration").Get<InvoiceServiceConfiguration>();
+
 var app = builder.Build();
+
+
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+}
+
+app.UseMiddleware<ExceptionMiddleware>();
+
+if (app.Configuration.GetValue<bool>("UseTeapotMiddleware"))
+{
+    app.UseMiddleware<TeapotMiddleware>();
 }
 
 app.UseAuthorization();

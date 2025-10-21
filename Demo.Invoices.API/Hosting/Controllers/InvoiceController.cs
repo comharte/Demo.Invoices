@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Demo.Invoices.API.Hosting.Controllers;
 
+//https://learn.microsoft.com/en-us/aspnet/core/mvc/models/model-binding?view=aspnetcore-9.0
+
 [ApiController]
 public class InvoiceController : ControllerBase
 {
@@ -18,9 +20,14 @@ public class InvoiceController : ControllerBase
     }
 
     [HttpGet("api/dev")]
-    public IActionResult Dev(CancellationToken cancellationToken)
+    public string Dev(bool withException = false, CancellationToken cancellationToken = default)
     {
-        return Ok("Development endpoint is working.");
+        if (withException)
+        {
+            throw new Exception("This is a test exception from /api/dev endpoint.");
+        }
+
+        return "Development endpoint is working.";
     }
 
     [HttpGet("api/invoices/customers")]
@@ -37,6 +44,14 @@ public class InvoiceController : ControllerBase
         var service = CreateInvoiceServiceWithoutDI();
         var currencies = await service.GetAvailableCustomersAsync(cancellationToken);
         return Ok(currencies);
+    }
+
+    [HttpPost("api/invoices/create")]
+    public IActionResult CreateInvoice(string name, string currencyCode, CancellationToken cancellationToken)
+    {
+
+        // Implementation for creating an invoice would go here.
+        return Ok("Invoice created successfully.");
     }
 
     private static IInvoiceService CreateInvoiceServiceWithoutDI()
