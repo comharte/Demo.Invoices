@@ -16,8 +16,6 @@ builder.Services.AddInfrastructure()
 
 var env = builder.Configuration.GetValue<string>("env");
 
-builder.Services.AddSingleton<InvoiceServiceConfiguration>(isc);
-
 var app = builder.Build();
 
 
