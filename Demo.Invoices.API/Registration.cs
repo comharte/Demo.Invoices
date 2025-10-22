@@ -6,8 +6,15 @@
 /// </remarks>
 public static class Registration
 {
-    public static IServiceCollection AddApplication(this IServiceCollection services)
+    public static IServiceCollection AddApplication(this IServiceCollection services, IConfiguration configuration)
     {
+        var invoiceServiceConfiguration = configuration.GetSection("InvoiceServiceConfiguration").Get<InvoiceServiceConfiguration>();
+
+        if(invoiceServiceConfiguration == null)
+        {
+            throw new Exception("InvoiceServiceConfiguration is not configured properly.");
+        }
+
         services.AddScoped<IInvoiceService, InvoiceService>();
         
         return services;

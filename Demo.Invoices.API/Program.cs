@@ -11,13 +11,12 @@ var builder = WebApplication.CreateBuilder(args);
 
 //Using extension method to allow each layer register its own dependencies
 builder.Services.AddInfrastructure()
-    .AddApplication()
+    .AddApplication(builder.Configuration)
     .AddHosting();
 
-builder.Services.AddSwaggerGen();
-
 var env = builder.Configuration.GetValue<string>("env");
-var isc = builder.Configuration.GetSection("InvoiceServiceConfiguration").Get<InvoiceServiceConfiguration>();
+
+builder.Services.AddSingleton<InvoiceServiceConfiguration>(isc);
 
 var app = builder.Build();
 

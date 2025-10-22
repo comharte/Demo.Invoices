@@ -15,11 +15,14 @@ public class InvoiceService : IInvoiceService
 
     private readonly IInvoiceRepository _invoiceRepository;
 
-    public InvoiceService(ICurrencyApiClient currencyApiClient, ICustomerApiClient customerApiClient, IInvoiceRepository invoiceRepository)
+    private readonly InvoiceServiceConfiguration _invoiceServiceConfiguration;
+
+    public InvoiceService(ICurrencyApiClient currencyApiClient, ICustomerApiClient customerApiClient, IInvoiceRepository invoiceRepository, InvoiceServiceConfiguration invoiceServiceConfiguration)
     {
         _currencyApiClient = currencyApiClient;
         _customerApiClient = customerApiClient;
         _invoiceRepository = invoiceRepository;
+        _invoiceServiceConfiguration = invoiceServiceConfiguration;
     }
 
     public async Task<List<string>> GetAvailableCurrenciesAsync(CancellationToken cancellationToken)
