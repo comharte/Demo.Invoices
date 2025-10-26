@@ -10,13 +10,13 @@ public static class Registration
     {
         var invoiceServiceConfiguration = configuration.GetSection("InvoiceServiceConfiguration").Get<InvoiceServiceConfiguration>();
 
-        if(invoiceServiceConfiguration == null)
+        if (invoiceServiceConfiguration == null)
         {
             throw new Exception("InvoiceServiceConfiguration is not configured properly.");
         }
-
+        services.AddSingleton<InvoiceServiceConfiguration>(invoiceServiceConfiguration);
         services.AddScoped<IInvoiceService, InvoiceService>();
-        
+
         return services;
     }
 
@@ -33,6 +33,7 @@ public static class Registration
     {
         // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
         services.AddOpenApi();
+        services.AddSwaggerGen();
         services.AddControllers();
         return services;
     }

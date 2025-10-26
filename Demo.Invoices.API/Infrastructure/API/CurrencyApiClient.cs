@@ -16,7 +16,8 @@ public class CurrencyApiClient : ICurrencyApiClient
     [
         new CurrencyGeneratorInfo("USD", 1.0m, 1.2m),
         new CurrencyGeneratorInfo("GBP", 0.8m, 0.9m),
-        new CurrencyGeneratorInfo("JPY", 120.0m, 140.0m)
+        new CurrencyGeneratorInfo("JPY", 120.0m, 140.0m),
+        new CurrencyGeneratorInfo("EUR", 1, 1)
     ];
 
     public int ExecutionCount { get; set; } = 0;

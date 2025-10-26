@@ -14,10 +14,7 @@ builder.Services.AddInfrastructure()
     .AddApplication(builder.Configuration)
     .AddHosting();
 
-var env = builder.Configuration.GetValue<string>("env");
-
 var app = builder.Build();
-
 
 
 // Configure the HTTP request pipeline.
@@ -31,11 +28,6 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseMiddleware<ExceptionMiddleware>();
-
-if (app.Configuration.GetValue<bool>("UseTeapotMiddleware"))
-{
-    app.UseMiddleware<TeapotMiddleware>();
-}
 
 app.UseAuthorization();
 

@@ -20,20 +20,46 @@ public class InvoiceController : ControllerBase
     }
 
     [HttpGet("api/dev")]
-    public string Dev(bool withException = false, CancellationToken cancellationToken = default)
+    public IActionResult Dev(bool withException = false, CancellationToken cancellationToken = default)
     {
         if (withException)
         {
             throw new Exception("This is a test exception from /api/dev endpoint.");
         }
 
-        return "Development endpoint is working.";
+        return Ok("Development endpoint is working.");
     }
 
-    [HttpGet("api/invoices/customers")]
+    [HttpGet("api/invoices/{id}")]
+    public async Task<IActionResult> GetInvoiceAsync(int id, CancellationToken cancellationToken)
+    {
+        var invoice = await _service.GetInvoiceAsync(id, cancellationToken);
+
+        return Ok(invoice);
+    }
+
+    [HttpPost("api/invoices")]
+    public async Task<IActionResult> ModifyInvoiceAsync(InvoiceModel model, CancellationToken cancellationToken)
+    {
+        model = await _service.ModifyInvoiceAsync(model, cancellationToken);
+
+        return Ok(model);
+    }
+
+
+    [HttpGet("api/customers")]
     public async Task<IActionResult> GetAvailableCustomersAsync(CancellationToken cancellationToken)
     {
-        var currencies = await _service.GetAvailableCustomersAsync(cancellationToken);
+        var customers = await _service.GetAvailableCustomersAsync(cancellationToken);
+
+        return Ok(customers);
+    }
+
+    [HttpGet("api/currencies")]
+    public async Task<IActionResult> GetAvailableCurrenciesAsync(CancellationToken cancellationToken)
+    {
+        var currencies = await _service.GetAvailableCurrenciesAsync(cancellationToken);
+
         return Ok(currencies);
     }
 
@@ -44,14 +70,6 @@ public class InvoiceController : ControllerBase
         var service = CreateInvoiceServiceWithoutDI();
         var currencies = await service.GetAvailableCustomersAsync(cancellationToken);
         return Ok(currencies);
-    }
-
-    [HttpPost("api/invoices/create")]
-    public IActionResult CreateInvoice(string name, string currencyCode, CancellationToken cancellationToken)
-    {
-
-        // Implementation for creating an invoice would go here.
-        return Ok("Invoice created successfully.");
     }
 
     private static IInvoiceService CreateInvoiceServiceWithoutDI()
@@ -65,6 +83,13 @@ public class InvoiceController : ControllerBase
         //In real life scenario repository will depend on underlying database implementation - as we add that implementatnion we will need to update this code as well
         //API will probably depend on http clients - same example.
         //And this is just one place where we need to create InvoiceService - in real life scenario there will be many places like this. All of them needs to be updated when dependencies change
-        return new InvoiceService(currencyApiClient, customerApiClient, invoiceRepository);
+        return new InvoiceService(currencyApiClient, customerApiClient, invoiceRepository, null);
     }
+}
+
+public class InvoiceRequestDto
+{
+    public string Name { get; set; }
+
+    public string CurrencyCode { get; set; }
 }

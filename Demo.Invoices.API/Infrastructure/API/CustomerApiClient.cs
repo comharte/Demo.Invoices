@@ -2,7 +2,7 @@
 
 public interface ICustomerApiClient
 {
-    public Task<List<CustomerInfo>> GetCustomersAsync(CancellationToken cancellationToken);
+    public Task<List<CustomerInfo>> GetActiveCustomersAsync(CancellationToken cancellationToken);
 }
 
 public record CustomerInfo(Guid GlobalId, string Name, bool IsKey);
@@ -18,6 +18,6 @@ public class CustomerApiClient : ICustomerApiClient
         new (Guid.Parse("d4e5f678-9012-3456-7890-defabcdefabc"), "Initech", true),
     };
 
-    public Task<List<CustomerInfo>> GetCustomersAsync(CancellationToken cancellationToken)
+    public Task<List<CustomerInfo>> GetActiveCustomersAsync(CancellationToken cancellationToken)
         => Task.FromResult(_fakeCustomers.ToList());
 }
