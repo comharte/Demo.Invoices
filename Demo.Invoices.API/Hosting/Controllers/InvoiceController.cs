@@ -46,6 +46,13 @@ public class InvoiceController : ControllerBase
         return Ok(model);
     }
 
+    [HttpDelete("api/invoices/{id}")]
+    public async Task<IActionResult> DeleteInvoiceAsync(int id, CancellationToken cancellationToken)
+    {
+        await _service.DeleteInvoiceAsync(id, cancellationToken);
+        return NoContent();
+    }
+
 
     [HttpGet("api/customers")]
     public async Task<IActionResult> GetAvailableCustomersAsync(CancellationToken cancellationToken)
@@ -76,20 +83,13 @@ public class InvoiceController : ControllerBase
     {
         ICurrencyApiClient currencyApiClient = new CurrencyApiClient();
         ICustomerApiClient customerApiClient = new CustomerApiClient();
-        IInvoiceRepository invoiceRepository = new InvoiceRepository();
+        //IInvoiceRepository invoiceRepository = new InvoiceRepository();
 
         //In order to create invoice service at this point I need to know all it dependencies and how to create them
         //I am lucky because CurrencyApiClient, CustomerApiClient, InvoiceRepository are not depending on any other services (parameterless constructors)
         //In real life scenario repository will depend on underlying database implementation - as we add that implementatnion we will need to update this code as well
         //API will probably depend on http clients - same example.
         //And this is just one place where we need to create InvoiceService - in real life scenario there will be many places like this. All of them needs to be updated when dependencies change
-        return new InvoiceService(currencyApiClient, customerApiClient, invoiceRepository, null);
+        return new InvoiceService(currencyApiClient, customerApiClient, null, null);
     }
-}
-
-public class InvoiceRequestDto
-{
-    public string Name { get; set; }
-
-    public string CurrencyCode { get; set; }
 }

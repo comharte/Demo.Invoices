@@ -15,4 +15,6 @@ public class InvoiceEntity
     public decimal ExchangeRate { get; set; }
 
     public DateTime TransactionDate { get; set; }
+
+    public List<InvoiceItemEntity> Items { get; set; } = [];
 }

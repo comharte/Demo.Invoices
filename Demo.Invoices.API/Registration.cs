@@ -20,12 +20,17 @@ public static class Registration
         return services;
     }
 
-    public static IServiceCollection AddInfrastructure(this IServiceCollection services)
+    public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddScoped<IInvoiceRepository, InvoiceRepository>();
         services.AddScoped<ICurrencyApiClient, CurrencyApiClient>();
         services.AddScoped<ICustomerApiClient, CustomerApiClient>();
+        
+        var dbContextOptions = InvoiceDbContextOptionsBuilder.Create(configuration);
+        services.AddSingleton(dbContextOptions);
+        services.AddScoped<InvoiceDbContext>();
 
+        
         return services;
     }
 

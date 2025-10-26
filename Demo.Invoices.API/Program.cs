@@ -10,7 +10,7 @@ global using Demo.Invoices.API.Infrastructure.API;
 var builder = WebApplication.CreateBuilder(args);
 
 //Using extension method to allow each layer register its own dependencies
-builder.Services.AddInfrastructure()
+builder.Services.AddInfrastructure(builder.Configuration)
     .AddApplication(builder.Configuration)
     .AddHosting();
 
@@ -32,5 +32,11 @@ app.UseMiddleware<ExceptionMiddleware>();
 app.UseAuthorization();
 
 app.MapControllers();
+
+using (var scope = app.Services.CreateScope())
+{
+    var invoiceRepository = scope.ServiceProvider.GetRequiredService<IInvoiceRepository>();
+    await invoiceRepository.Initialize(app.Lifetime.ApplicationStopping);
+}
 
 app.Run();

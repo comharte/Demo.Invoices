@@ -6,7 +6,7 @@ public interface IInvoiceService
 
     public Task<Dictionary<Guid, string>> GetAvailableCustomersAsync(CancellationToken cancellationToken);
 
-    public Task DeleteInvoiceAsync(Guid invoiceGlobalId, CancellationToken cancellationToken);
+    public Task DeleteInvoiceAsync(int id, CancellationToken cancellationToken);
 
     public Task<InvoiceModel> ModifyInvoiceAsync(InvoiceModel invoiceModel, CancellationToken cancellationToken);
 
@@ -38,9 +38,9 @@ public class InvoiceService : IInvoiceService
         return await SaveModel(invoiceModel, cancellationToken);
     }
 
-    public async Task DeleteInvoiceAsync(Guid invoiceGlobalId, CancellationToken cancellationToken)
+    public async Task DeleteInvoiceAsync(int id, CancellationToken cancellationToken)
     {
-        await _invoiceRepository.DeleteAsync(invoiceGlobalId, cancellationToken);
+        await _invoiceRepository.DeleteAsync(id, cancellationToken);
     }
 
     public async Task<List<string>> GetAvailableCurrenciesAsync(CancellationToken cancellationToken)
@@ -103,7 +103,7 @@ public class InvoiceService : IInvoiceService
 
     public async Task<InvoiceModel> GetInvoiceAsync(int id, CancellationToken cancellationToken)
     {
-        var entity = await _invoiceRepository.GetByGlobalIdAsync(id, cancellationToken);
+        var entity = await _invoiceRepository.GetByIdAsync(id, cancellationToken);
 
         return new InvoiceModel()
         {
