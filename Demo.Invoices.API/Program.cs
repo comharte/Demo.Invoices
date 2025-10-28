@@ -12,7 +12,7 @@ var builder = WebApplication.CreateBuilder(args);
 //Using extension method to allow each layer register its own dependencies
 builder.Services.AddInfrastructure(builder.Configuration)
     .AddApplication(builder.Configuration)
-    .AddHosting();
+    .AddHosting(builder.Configuration);
 
 var app = builder.Build();
 

@@ -1,3 +1,5 @@
+using Demo.Invoices.API.Hosting.Security;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Demo.Invoices.API.Hosting.Controllers;
@@ -19,6 +21,7 @@ public class InvoiceController : ControllerBase
         _service = service;
     }
 
+    [MinimumAgeAuthorize(17)]
     [HttpGet("api/dev")]
     public IActionResult Dev(bool withException = false, CancellationToken cancellationToken = default)
     {
