@@ -1,50 +1,55 @@
 ﻿using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
-namespace Demo.Invoices.API.Hosting.Security
+namespace Demo.Invoices.API.Hosting.Security;
+
+/// <summary>
+/// JWT Token Symmetric Signing Credentials are useful for non-production scenarios and simple demos.
+/// It's very easy to configure two authentication handlers:
+/// - asymetric signing for production - requires authorization server 
+/// - symetric signing for local development and demo purposes - allows us to generate tokens on our own without authorization server.
+/// </summary>
+public class JwtTokenSymmetricSigningCredentials
 {
-    public class JwtTokenSymmetricSigningCredentials
+    private const string ConfigurationSectionName = "JwtTokenSymmetricKey";
+
+    private readonly SigningCredentials _signingCredentials;
+
+    private readonly SymmetricSecurityKey _symmetricSecurityKey;
+
+    public JwtTokenSymmetricSigningCredentials(IConfiguration configuration)
     {
-        private const string ConfigurationSectionName = "JwtTokenSymmetricKey";
+        configuration.Bind("JwtTokenSymmetricKey", this);
 
-        private readonly SigningCredentials _signingCredentials;
-
-        private readonly SymmetricSecurityKey _symmetricSecurityKey;
-
-        public JwtTokenSymmetricSigningCredentials(IConfiguration configuration)
+        if (string.IsNullOrEmpty(Issuer) || string.IsNullOrEmpty(Audience))
         {
-            configuration.Bind("JwtTokenSymmetricKey", this);
-
-            if (string.IsNullOrEmpty(Issuer) || string.IsNullOrEmpty(Audience))
-            {
-                throw new InvalidOperationException("JWT Token Symmetric Key configuration is invalid.");
-            }
-
-            if (string.IsNullOrEmpty(Key))
-            {
-                throw new InvalidOperationException("JWT Token Symmetric Key is not configured.");
-            }
-
-            if (ExpirationMinutes < 1)
-            {
-                throw new InvalidOperationException("JWT Token Symmetric Key ExpirationMinutes must be greater than zero.");
-            }
-
-            _symmetricSecurityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Key));
-
-            _signingCredentials = new SigningCredentials(_symmetricSecurityKey, SecurityAlgorithms.HmacSha256);
+            throw new InvalidOperationException("JWT Token Symmetric Key configuration is invalid.");
         }
 
-        public string Issuer { get; set; } = "Demo.Invoices.API";
+        if (string.IsNullOrEmpty(Key))
+        {
+            throw new InvalidOperationException("JWT Token Symmetric Key is not configured.");
+        }
 
-        public string Audience { get; set; } = "Demo.Invoices.API.Clients";
+        if (ExpirationMinutes < 1)
+        {
+            throw new InvalidOperationException("JWT Token Symmetric Key ExpirationMinutes must be greater than zero.");
+        }
 
-        public string Key { get; set; } = Guid.NewGuid().ToString();
+        _symmetricSecurityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Key));
 
-        public int ExpirationMinutes { get; set; } = 60;
-
-        public SigningCredentials Credentials => _signingCredentials;
-
-        public SymmetricSecurityKey SymmetricSecurityKey => _symmetricSecurityKey;
+        _signingCredentials = new SigningCredentials(_symmetricSecurityKey, SecurityAlgorithms.HmacSha256);
     }
+
+    public string Issuer { get; set; } = "Demo.Invoices.API";
+
+    public string Audience { get; set; } = "Demo.Invoices.API.Clients";
+
+    public string Key { get; set; } = Guid.NewGuid().ToString();
+
+    public int ExpirationMinutes { get; set; } = 60;
+
+    public SigningCredentials Credentials => _signingCredentials;
+
+    public SymmetricSecurityKey SymmetricSecurityKey => _symmetricSecurityKey;
 }

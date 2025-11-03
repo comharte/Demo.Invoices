@@ -4,11 +4,20 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Demo.Invoices.API.Hosting.Controllers;
 
+/// <summary>
+/// If API wants to define its own user/permission store (not recommended for production scenarios)
+/// we need endpoint to issue user token so that frontend app can access other controllers/endpoints.
+/// Usually flow goes like this:
+/// - Frontend app displays login screen
+/// - User provides login/password and 'api/authenticate' is called returning JWT token
+/// - Forntend app stores that token and reuse it everytime it wants to access other endpoints (e.g. invoice/create)
+/// * For production case instead of generating token through 'api/authenticate' endpoint we redirect user to authorization server and obtain token from there.
+/// </summary>
 public class AuthenticationController : ControllerBase
 {
-    private readonly UserStore _userStore;
+    private readonly FakeUserStore _userStore;
 
-    public AuthenticationController(UserStore userStore)
+    public AuthenticationController(FakeUserStore userStore)
     {
         _userStore = userStore;
     }

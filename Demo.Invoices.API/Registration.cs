@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using System.Net.WebSockets;
 
 namespace Demo.Invoices.API;
 
@@ -11,6 +12,9 @@ namespace Demo.Invoices.API;
 /// </remarks>
 public static class Registration
 {
+    /// <summary>
+    /// Adds services required by the Application layer (business logic). Usually, these code reside in the Application project.
+    /// </summary>
     public static IServiceCollection AddApplication(this IServiceCollection services, IConfiguration configuration)
     {
         var invoiceServiceConfiguration = configuration.GetSection("InvoiceServiceConfiguration").Get<InvoiceServiceConfiguration>();
@@ -25,6 +29,9 @@ public static class Registration
         return services;
     }
 
+    /// <summary>
+    /// Adds services required by the Infrastructure layer (data access, external API clients, etc.). Usually, these code reside in the Infrastructure project.
+    /// </summary>
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddScoped<IInvoiceRepository, InvoiceRepository>();
@@ -35,10 +42,12 @@ public static class Registration
         services.AddSingleton(dbContextOptions);
         services.AddScoped<InvoiceDbContext>();
 
-
         return services;
     }
 
+    /// <summary>
+    /// Adds services required by the Hosting layer (web hosting, authentication, authorization, etc.). Usually, these code reside in the Hosting project.
+    /// </summary>
     public static IServiceCollection AddHosting(this IServiceCollection services, IConfiguration configuration)
     {
         // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -46,20 +55,40 @@ public static class Registration
         services.AddSwaggerGen();
         services.AddControllers();
 
+        services.AddScoped<ContextMiddleware.ExecutionContext>();
+        services.AddScoped<IExecutionContext>(provider => provider.GetRequiredService<ContextMiddleware.ExecutionContext>());
+
+        services.AddScoped<UserContext>();
+        services.AddScoped<IUserContext, UserContext>(provider => provider.GetRequiredService<UserContext>());
+
+        services.AddHostingSecurity(configuration);
+
+        return services;
+    }
+
+    /// <summary>
+    /// Moved here to keep hosting related security code isolated.
+    /// </summary>
+    public static IServiceCollection AddHostingSecurity(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddSingleton<FakeUserStore>();
+
+        services.AddSingleton<IAuthorizationHandler,PermissionAuthorizationHandler>();
+
         var jwtTokenSymmetricSigningCredentials = new JwtTokenSymmetricSigningCredentials(configuration);
         services.AddSingleton(jwtTokenSymmetricSigningCredentials);
-        services.AddSingleton<UserStore>();
+
 
         services.AddAuthentication("Basic")
             .AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>("Basic", options => { });
-
-        services.AddScoped<IClaimsTransformation, ClaimsTransformation>();
 
         services.AddAuthentication().AddJwtBearer("BearerSymetric", options =>
         {
             options.Authority = jwtTokenSymmetricSigningCredentials.Issuer;
             options.Audience = jwtTokenSymmetricSigningCredentials.Audience;
             options.RequireHttpsMetadata = false;
+            options.MapInboundClaims = false;
+
             options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
             {
                 ValidateIssuer = true,
@@ -69,6 +98,7 @@ public static class Registration
                 ValidateIssuerSigningKey = true,
                 IssuerSigningKey = jwtTokenSymmetricSigningCredentials.SymmetricSecurityKey,
                 ValidateLifetime = true,
+                RoleClaimType = DemoClaimTypes.Role //Ensure that authentication handler maps roles to standardized claim type without us having to implicitly do it in ClaimsTransformation step
             };
         });
 
@@ -78,32 +108,55 @@ public static class Registration
             options.Audience = "api://anonymous-api/dev";
         });
 
-        services.AddSingleton<IAuthorizationHandler,MinimumAgeAuthorizationHandler>();
+        //This will fire if no authorization attribute is found on the endpoint
+        AuthorizationPolicyBuilder fallbackPolicyBuilder = new AuthorizationPolicyBuilder();
+        fallbackPolicyBuilder.AddAuthenticationSchemes(SecurityAuthenticationSchemes.All);
+        fallbackPolicyBuilder.RequireAuthenticatedUser();
+        var fallbackPolicy = fallbackPolicyBuilder.Build();
 
-        AuthorizationPolicyBuilder builder = new AuthorizationPolicyBuilder(["Basic", "BearerAsymetric"]);
-        builder.RequireAssertion(context => context.User.Claims.Any(c => c.Type.Equals("master")));
-        var masterPolicy = builder.Build();
+        //This will fire if default authorization attribute is found on the endpoint    
+        AuthorizationPolicyBuilder defaultPolicyBuilder = new AuthorizationPolicyBuilder();
+        defaultPolicyBuilder.AddAuthenticationSchemes(SecurityAuthenticationSchemes.All);
+        defaultPolicyBuilder.RequireAuthenticatedUser();
+        defaultPolicyBuilder.RequireAssertion(ctx =>
+        {
+            // We not only want to receive valid token but also it has to contain base identification claims e.g, email
+            return UserContext.CanBeAuthenticated(ctx.User);
+        });
 
         services.AddAuthorization(options =>
         {
-            options.AddPolicy("Dev", policy =>
+            options.FallbackPolicy = fallbackPolicyBuilder.Build();
+            options.DefaultPolicy = defaultPolicyBuilder.Build();
+
+            options.AddPolicy("dynamicDevPolicy", policy =>
             {
                 policy.RequireAuthenticatedUser();
-                policy.AuthenticationSchemes.Add("Basic");
-                policy.AuthenticationSchemes.Add("BearerSymetric");
+                foreach (var schema in SecurityAuthenticationSchemes.All)
+                {
+                    policy.AuthenticationSchemes.Add(schema);
+                }
                 policy.RequireAssertion(context =>
                 {
-                    context.User.Claims.Any(c => c.Type.Equals("master") && c.Value.Equals("true"));
-                    return true;
+                    var isAuth = context.User.Claims.Any(c => c.Type.Equals("roles") && c.Value.Contains("Admin"));
+                    return isAuth;
                 });
             });
         });
 
-
         return services;
     }
 
-    public static WebApplication ConfigurePipeline(this WebApplication app)
+
+
+    /// <summary>
+    /// Configures the HTTP request pipeline. Usually, this code reside in the Hosting project. 
+    /// Not always we want to add HTTP request pipeline. If designed properly our app could be compiled to single executable and run in two modes:
+    /// * API - with HTTP request pipeline and without background processing
+    /// * Worker - without HTTP request pipeline and with background processing
+    /// Allowing to properly scale each mode independently.
+    /// </summary>
+    public static async Task ConfigureHostingPipeline(this WebApplication app)
     {
         // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())
@@ -119,8 +172,14 @@ public static class Registration
         app.UseAuthentication();
         app.UseAuthorization();
 
+        app.UseMiddleware<ContextMiddleware>();
+
         app.MapControllers();
 
-        return app;
+        using (var scope = app.Services.CreateScope())
+        {
+            var invoiceRepository = scope.ServiceProvider.GetRequiredService<IInvoiceRepository>();
+            await invoiceRepository.Initialize(app.Lifetime.ApplicationStopping);
+        }
     }
 }

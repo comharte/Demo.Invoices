@@ -21,7 +21,10 @@ public class InvoiceController : ControllerBase
         _service = service;
     }
 
-    [MinimumAgeAuthorize(17)]
+    //All authorization requirements must be met to access this endpoint
+    //If for example we would like to add another requirement like 'MustBeOver18' we could just add another Authorize attribute here without changing existing ones
+    [Authorize(Roles = "Developer")]
+    [AuthorizePermission("Access.Invoice.Dev.Resources")]
     [HttpGet("api/dev")]
     public IActionResult Dev(bool withException = false, CancellationToken cancellationToken = default)
     {
