@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.OpenApi.Models;
 using System.Net.WebSockets;
 
 namespace Demo.Invoices.API;
@@ -52,7 +53,32 @@ public static class Registration
     {
         // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
         services.AddOpenApi();
-        services.AddSwaggerGen();
+        services.AddSwaggerGen(builder =>
+        {
+            var jwtScheme = new OpenApiSecurityScheme()
+            {
+                Name = "Authorization",
+                Type = SecuritySchemeType.Http,
+                Scheme = "Bearer",
+                BearerFormat = "JWT",
+                In = ParameterLocation.Header,
+                Description = "Bearer token",
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            };
+
+            builder.AddSecurityDefinition("Bearer", jwtScheme);
+            builder.AddSecurityRequirement(new OpenApiSecurityRequirement
+            {
+                {
+                    jwtScheme, new string[] { }
+                }
+            });
+        });
+
         services.AddControllers();
 
         services.AddScoped<ContextMiddleware.ExecutionContext>();
@@ -73,7 +99,7 @@ public static class Registration
     {
         services.AddSingleton<FakeUserStore>();
 
-        services.AddSingleton<IAuthorizationHandler,PermissionAuthorizationHandler>();
+        services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
 
         var jwtTokenSymmetricSigningCredentials = new JwtTokenSymmetricSigningCredentials(configuration);
         services.AddSingleton(jwtTokenSymmetricSigningCredentials);

@@ -36,6 +36,14 @@ public class InvoiceController : ControllerBase
         return Ok("Development endpoint is working.");
     }
 
+    [HttpGet("api/invoices")]
+    public async Task<IActionResult> GetInvoicesAsync(CancellationToken cancellationToken)
+    {
+        var invoice = await _service.GetInvoicesAsync(cancellationToken);
+
+        return Ok(invoice);
+    }
+
     [HttpGet("api/invoices/{id}")]
     public async Task<IActionResult> GetInvoiceAsync(int id, CancellationToken cancellationToken)
     {
@@ -59,6 +67,21 @@ public class InvoiceController : ControllerBase
         return NoContent();
     }
 
+    [HttpPost("api/invoices/{id}/addItem")]
+    public async Task<IActionResult> AddInvoiceItemAsync(int id, [FromBody] InvoiceItemModel item, CancellationToken cancellationToken)
+    {
+        var model = await _service.AddInvoiceItem(id, item.ProductCode, item.Value, cancellationToken);
+
+        return Ok(model);
+    }
+
+    [HttpDelete("api/invoices/removeItem")]
+    public async Task<IActionResult> AddInvoiceItemAsync([FromBody] int itemId, CancellationToken cancellationToken)
+    {
+        var model = await _service.RemoveInvoiceItem(itemId, cancellationToken);
+
+        return Ok(model);
+    }
 
     [HttpGet("api/customers")]
     public async Task<IActionResult> GetAvailableCustomersAsync(CancellationToken cancellationToken)

@@ -8,5 +8,5 @@ public class InvoiceItemEntity
 
     public string ProductCode { get; set; } = null!;
 
-    public decimal Amount { get; set; }
+    public decimal Value { get; set; }
 }
